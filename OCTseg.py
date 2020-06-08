@@ -100,6 +100,21 @@ for j in range(cols/2+100, cols, 10):
 	cv2.line(img, (j, inter[0]), (j, inter[1]), (0,255,0), 2)
 	
 #######################################
+
+### TODO handle y coordinates when some x coordinates get removed
+print('pruning outliers')
+# data must be numpy array
+def reject_outliers(data, m=1):
+    return data[abs(data - np.mean(data)) < m * np.std(data)]
+
+test = []
+for i in top:
+	test.append(i[1])
+print(test)
+t = reject_outliers(np.array(test))
+print(t)
+
+# connects across all top points
 for i in range(len(top)-1):
 	p1 = top[i]
 	p2 = top[i+1]

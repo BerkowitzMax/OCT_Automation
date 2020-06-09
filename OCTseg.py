@@ -2,6 +2,7 @@
 # executable for automated segmentation of mouse OCT
 import cv2
 import numpy as np
+import statistics as stat
 import os
 
 print("testing")
@@ -41,9 +42,6 @@ img_bw = cv2.imread('/home/maxberko/seg_automation/B_despeck.jpg', cv2.IMREAD_GR
 rows = 500
 cols = 1000
 
-### TODO-- potentially repeat several times with the starting row incremented
-### Draw lines across the top (array) line of points
-###
 #################################
 # generates a list of sets where 
 # black changes to white
@@ -78,11 +76,9 @@ def intersect(a, b):
 
 print('Calculating intersections')
 ##################################
-# TODO: iterate through mins and maxes and eliminate outliers (>15%?)
 # Goes through and marks segments 
 # in first and last half of image
 ##################################
-
 top = []
 # first half
 for j in range(0, cols/2-100, 10):
@@ -91,13 +87,12 @@ for j in range(0, cols/2-100, 10):
 	pair = [j, inter[0]]
 	top.append(pair)
 
-# prune outliers- percent change
-# top_dif = float(abs(top[0] - top[i]))/top[i] * 100
-
 # back half
 for j in range(cols/2+100, cols, 10):
 	inter = intersect(x_coord_arr[j], x_coord_arr[j+5])
-	cv2.line(img, (j, inter[0]), (j, inter[1]), (0,255,0), 2)
+	#cv2.line(img, (j, inter[0]), (j, inter[1]), (0,255,0), 2)
+	pair = [j, inter[0]]
+	top.append(pair)
 	
 #######################################
 
@@ -107,7 +102,6 @@ def reject_outliers(data):
 	y = [y[1] for y in data]
 
 	elements = np.array(y)
-
 	mean = np.mean(elements, axis=0)
 	sd = np.std(elements, axis=0)
 
@@ -126,6 +120,11 @@ def reject_outliers(data):
 	return data
 
 top = reject_outliers(top)
+#top = reject_outliers(top)
+#top = reject_outliers(top)
+## TODO-- repeat
+## restart the process of drawing lines downwards 
+# and taking the averages -- calling reject_outliers
 
 # connects across all top points
 for i in range(len(top)-1):

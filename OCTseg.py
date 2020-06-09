@@ -48,21 +48,25 @@ cols = 1000
 # **every index is the column coordinate
 # **(y * 10)
 #################################
-x_coord_arr = [] # array of x coordinate sets
-for j in range(0, cols):
+def collect_coordinates(row_start=0):
+	x_coord_arr = [] # array of x coordinate sets
+	for j in range(0, cols):
 
-	# temp set for each column
-	row_set = set()
-	for i in range(rows-1):
-		# black to white
-		if binary[i, j] == 0 and binary[i+1, j] == 255:
-			row_set.add(i)
+		# temp set for each column
+		row_set = set()
+		for i in range(row_start, rows-1):
+			# black to white
+			if binary[i, j] == 0 and binary[i+1, j] == 255:
+				row_set.add(i)
 
-	x_coord_arr.append(row_set)
+		x_coord_arr.append(row_set)
+	return x_coord_arr
 
+###############################################
 # takes in two sets and finds the intersection 
 # within a +-5 range
 # returns [min, max] vertical range
+###############################################
 def intersect(a, b):
 	set_inter = set()
 	for ai in a:
@@ -74,29 +78,31 @@ def intersect(a, b):
 
 	return [min(set_inter), max(set_inter)]
 
-print('Calculating intersections')
+# [x1, y1] [x2, y2]
+def slope(a, b):
+	return (b[1] - a[1]) / (b[0] - a[0])
+
 ##################################
 # Goes through and marks segments 
 # in first and last half of image
 ##################################
-top = []
-# first half
-for j in range(0, cols/2-100, 10):
-	inter = intersect(x_coord_arr[j], x_coord_arr[j+5])
-	#cv2.line(img, (j, inter[0]), (j, inter[1]), (0,255,0), 2)
-	pair = [j, inter[0]]
-	top.append(pair)
+def calc_left(x_coord_arr, top):
+	# left side of img
+	for j in range(0, cols/2-100, 10):
+		inter = intersect(x_coord_arr[j], x_coord_arr[j+5])
+		#cv2.line(img, (j, inter[0]), (j, inter[1]), (0,255,0), 2)
+		pair = [j, inter[0]]
+		top.append(pair)
+	return top
 
-# back half
-for j in range(cols/2+100, cols, 10):
-	inter = intersect(x_coord_arr[j], x_coord_arr[j+5])
-	#cv2.line(img, (j, inter[0]), (j, inter[1]), (0,255,0), 2)
-	pair = [j, inter[0]]
-	top.append(pair)
-	
-#######################################
+def calc_right(x_coord_arr):
+	# right side of img
+	for j in range(cols/2+100, cols, 10):
+		inter = intersect(x_coord_arr[j], x_coord_arr[j+5])
+		cv2.line(img, (j, inter[0]), (j, inter[1]), (0,255,0), 2)
+		pair = [j, inter[0]]
+		#top.append(pair)
 
-print('pruning outliers')
 # data must be numpy array
 def reject_outliers(data):
 	y = [y[1] for y in data]
@@ -119,12 +125,24 @@ def reject_outliers(data):
 
 	return data
 
+
+print('Calculating intersections')
+x_coord_arr = collect_coordinates()
+
+top = []
+top = calc_left(x_coord_arr, top)
+
+print('pruning outliers')
 top = reject_outliers(top)
 #top = reject_outliers(top)
 #top = reject_outliers(top)
 ## TODO-- repeat
 ## restart the process of drawing lines downwards 
 # and taking the averages -- calling reject_outliers
+# ***start drawing lines on row by sorting by highest coordinate in top[] lst
+# *** might need to discard image and re-open
+
+## TODO-- Check angle of point A -> B and B-> C and compare to A -> C
 
 # connects across all top points
 for i in range(len(top)-1):

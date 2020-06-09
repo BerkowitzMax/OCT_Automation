@@ -87,7 +87,7 @@ top = []
 # first half
 for j in range(0, cols/2-100, 10):
 	inter = intersect(x_coord_arr[j], x_coord_arr[j+5])
-	cv2.line(img, (j, inter[0]), (j, inter[1]), (0,255,0), 2)
+	#cv2.line(img, (j, inter[0]), (j, inter[1]), (0,255,0), 2)
 	pair = [j, inter[0]]
 	top.append(pair)
 
@@ -101,18 +101,31 @@ for j in range(cols/2+100, cols, 10):
 	
 #######################################
 
-### TODO handle y coordinates when some x coordinates get removed
 print('pruning outliers')
 # data must be numpy array
-def reject_outliers(data, m=1):
-    return data[abs(data - np.mean(data)) < m * np.std(data)]
+def reject_outliers(data):
+	y = [y[1] for y in data]
 
-test = []
-for i in top:
-	test.append(i[1])
-print(test)
-t = reject_outliers(np.array(test))
-print(t)
+	elements = np.array(y)
+
+	mean = np.mean(elements, axis=0)
+	sd = np.std(elements, axis=0)
+
+	# gathers list of data points to remove
+	iter_list = []
+	for i in range(len(y)):
+		if (y[i] < mean - 1 * sd) or (y[i] > mean + 1 * sd):
+			iter_list.append(data[i])
+
+	# remove points from data set
+	# that were collected in iter_list
+	for e in iter_list:
+		if e in data:
+			data.remove(e)
+
+	return data
+
+top = reject_outliers(top)
 
 # connects across all top points
 for i in range(len(top)-1):

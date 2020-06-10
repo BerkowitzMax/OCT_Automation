@@ -9,16 +9,24 @@ print("testing")
 print(os.getcwd())
 
 # read in and save a jpeg
-img = cv2.imread('/home/maxberko/seg_automation/example_stack.jpg')
+img = cv2.imread('/home/maxberko/seg_automation/B.jpg')
 
 grayscaled = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 ## adaptive gaussian thresholding
 # second to last value: focuses on how specific to filter color (higher value = sloppy thresholding)
 # last value: switches between black (neg) and white (pos) -- higher values increase intensity
-threshold = cv2.adaptiveThreshold(grayscaled, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 37, -2.5)
+threshold = cv2.adaptiveThreshold(grayscaled, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 37, -2)
 
-cv2.imwrite('/home/maxberko/seg_automation/modified.jpg', threshold)
+# TODO-- find a better way to clean up picture
+# remove salt and pepper noise
+# this removes the need for imageJ entirely
+median_reduction = cv2.medianBlur(threshold, 5)
+median_reduction = cv2.medianBlur(median_reduction, 5)
+
+
+cv2.imwrite('/home/maxberko/seg_automation/modified.jpg', median_reduction)
+
 
 print('loading modified image')
 #NEXT STEP:
@@ -28,14 +36,14 @@ print('loading modified image')
 
 # locate vertical color divisions
 # opencv uses BGR
-img = cv2.imread('/home/maxberko/seg_automation/B_despeck.jpg')
+img = cv2.imread('/home/maxberko/seg_automation/modified.jpg')
 
 # make binary copy
 ## this binary will not be saved but will
 ## be used to determine where to draw lines on the
 ## grayscaled version
 ## VALUES: 0-black, 255-white
-img_bw = cv2.imread('/home/maxberko/seg_automation/B_despeck.jpg', cv2.IMREAD_GRAYSCALE)
+img_bw = cv2.imread('/home/maxberko/seg_automation/modified.jpg', cv2.IMREAD_GRAYSCALE)
 (thresh, binary) = cv2.threshold(img_bw, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 
 #rows, cols = img.shape
@@ -80,11 +88,12 @@ def intersect(a, b):
 
 # [x1, y1] [x2, y2]
 def slope(a, b):
-	return (b[1] - a[1]) / (b[0] - a[0])
+	return float(b[1] - a[1]) / (b[0] - a[0])
 
 ##################################
 # Goes through and marks segments 
-# in first and last half of image
+# in left  and right halves of image.
+# Also saves coordinates.
 ##################################
 def calc_left(x_coord_arr, top):
 	# left side of img
@@ -104,7 +113,7 @@ def calc_right(x_coord_arr):
 		#top.append(pair)
 
 # data must be numpy array
-def reject_outliers(data):
+def reject_outliers(data, m=1):
 	y = [y[1] for y in data]
 
 	elements = np.array(y)
@@ -114,7 +123,7 @@ def reject_outliers(data):
 	# gathers list of data points to remove
 	iter_list = []
 	for i in range(len(y)):
-		if (y[i] < mean - 1 * sd) or (y[i] > mean + 1 * sd):
+		if (y[i] < mean - m * sd) or (y[i] > mean + m * sd):
 			iter_list.append(data[i])
 
 	# remove points from data set
@@ -125,15 +134,15 @@ def reject_outliers(data):
 
 	return data
 
-
 print('Calculating intersections')
 x_coord_arr = collect_coordinates()
 
 top = []
 top = calc_left(x_coord_arr, top)
 
+#cv2.circle(img, (top[1][0], top[1][1]), 15, (0,255,0), -1)
+
 print('pruning outliers')
-top = reject_outliers(top)
 #top = reject_outliers(top)
 #top = reject_outliers(top)
 ## TODO-- repeat

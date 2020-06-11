@@ -44,7 +44,13 @@ def reject_outliers(data, m=1):
 img = cv2.imread(CUR_IMAGE_PATH)
 
 print('running threshold')
-# read in and save a jpeg
+
+############################################
+# make binary copy which will not be saved
+# but is used to determine where to 
+# draw lines on the original image
+### VALUES: 0-black, 255-white
+############################################
 img_bw = cv2.imread(CUR_IMAGE_PATH, cv2.IMREAD_GRAYSCALE)
 rows, cols = img_bw.shape
 
@@ -68,5 +74,6 @@ for i in range(len(top)-1):
 
 ## TODO--- skip point if it's a suddent change in elevation 
 ## INSTEAD of removing outliers, REPLACE these points with neighboring points
+## after this, create and use the gaussian picture where the lines are cleanly separated
 
 cv2.imwrite('/home/maxberko/seg_automation/despeck_changed.jpg', img)

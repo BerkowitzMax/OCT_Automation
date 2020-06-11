@@ -9,7 +9,7 @@ print("testing")
 print(os.getcwd())
 
 # read in and save a jpeg
-img = cv2.imread('/home/maxberko/seg_automation/B.jpg')
+img = cv2.imread('/home/maxberko/seg_automation/example_stack.jpg')
 
 grayscaled = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -114,6 +114,15 @@ def calc_right(x_coord_arr):
 
 # data must be numpy array
 def reject_outliers(data, m=1):
+	# check slopes to prevent unnecessary pruning
+	m_lst = []
+	for i in range(len(data)-1):
+		m = slope(data[i], data[i+1])
+		m_lst.append(m)
+	m_lst = sorted(m_lst)
+	if m_lst[0] < -0.3 and m_lst[-1] < 0.3:
+		return
+
 	y = [y[1] for y in data]
 
 	elements = np.array(y)
@@ -143,16 +152,23 @@ top = calc_left(x_coord_arr, top)
 #cv2.circle(img, (top[1][0], top[1][1]), 15, (0,255,0), -1)
 
 print('pruning outliers')
-#top = reject_outliers(top)
-#top = reject_outliers(top)
+top = reject_outliers(top)
+
+print('repeating...')
+start_pos = sorted([x[1] for x in top])[0] + 1 # shift pixel down
+
+x_coord_arr = collect_coordinates(row_start=start_pos)
+top = []
+top = calc_left(x_coord_arr, top)
+top = reject_outliers(top)
 ## TODO-- repeat
 ## restart the process of drawing lines downwards 
 # and taking the averages -- calling reject_outliers
 # ***start drawing lines on row by sorting by highest coordinate in top[] lst
 # *** might need to discard image and re-open
 
-## TODO-- Check angle of point A -> B and B-> C and compare to A -> C
-
+##TODO-- Check angle of point A -> B and B-> C and compare to A -> C
+ 
 # connects across all top points
 for i in range(len(top)-1):
 	p1 = top[i]

@@ -5,7 +5,8 @@ import numpy as np
 import statistics as stat
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/D.jpg'
+img = cv2.imread(CUR_IMAGE_PATH)
 
 def collect_coordinates(row_start=0):
 	x_coord_arr = [] # array of x coordinate sets
@@ -43,8 +44,6 @@ def reject_outliers(data, m=1):
 
 	return data
 
-img = cv2.imread(CUR_IMAGE_PATH)
-
 print('running threshold')
 
 ############################################
@@ -60,13 +59,12 @@ rows, cols = img_bw.shape
 ## additional manipulation to remove any outliers
 median_reduction = cv2.medianBlur(binary, 5)
 
-
-print('finding starting row...')
+print('finding starting row')
 x_coord_arr = collect_coordinates()
 top = [(i, x[0]) for i, x in enumerate(x_coord_arr)]
 
-#print('pruning outliers...')
-top = reject_outliers(top)
+print('removing outliers')
+top = reject_outliers(top, m=2)
 
 # connects across all top points
 for i in range(len(top)-1):
@@ -77,7 +75,7 @@ for i in range(len(top)-1):
 ## TODO--- skip point if it's a suddent change in elevation 
 ## INSTEAD of removing outliers, REPLACE these points with neighboring points
 ## after this, create and use the gaussian picture where the lines are cleanly separated
-
+## TODO--- lookup fitting a line to nth order polynomial
 ## use 'feeler' to look several pixels ahead/up/down to find next brightest spot
 
 cv2.imwrite('/home/maxberko/seg_automation/despeck_changed.jpg', img)

@@ -5,7 +5,7 @@ import numpy as np
 import statistics as stat
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/D.jpg'
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
 
 def collect_coordinates(row_start=0):
 	x_coord_arr = [] # array of x coordinate sets
@@ -23,14 +23,16 @@ def collect_coordinates(row_start=0):
 
 # data must be numpy array
 def reject_outliers(data, m=1):
-	elements = np.array(data)
+	y = [y[1] for y in data]
+
+	elements = np.array(y)
 	mean = np.mean(elements, axis=0)
 	sd = np.std(elements, axis=0)
 
 	# gathers list of data points to remove
 	iter_list = []
-	for i in range(len(data)):
-		if (data[i] < mean - m * sd) or (data[i] > mean + m * sd):
+	for i in range(len(y)):
+		if (y[i] < mean - m * sd) or (y[i] > mean + m * sd):
 			iter_list.append(data[i])
 
 	# remove points from data set
@@ -61,19 +63,21 @@ median_reduction = cv2.medianBlur(binary, 5)
 
 print('finding starting row...')
 x_coord_arr = collect_coordinates()
-top = [x[0] for x in x_coord_arr]
+top = [(i, x[0]) for i, x in enumerate(x_coord_arr)]
 
 #print('pruning outliers...')
-#top = reject_outliers(top)
+top = reject_outliers(top)
 
 # connects across all top points
 for i in range(len(top)-1):
 	p1 = top[i]
 	p2 = top[i+1]
-	cv2.line(img, (i, p1), (i+1, p2), (0,255,0), 2)
+	cv2.line(img, (p1[0], p1[1]), (p2[0], p2[1]), (0,255,0), 2)
 
 ## TODO--- skip point if it's a suddent change in elevation 
 ## INSTEAD of removing outliers, REPLACE these points with neighboring points
 ## after this, create and use the gaussian picture where the lines are cleanly separated
+
+## use 'feeler' to look several pixels ahead/up/down to find next brightest spot
 
 cv2.imwrite('/home/maxberko/seg_automation/despeck_changed.jpg', img)

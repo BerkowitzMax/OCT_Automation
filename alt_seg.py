@@ -5,7 +5,7 @@ import numpy as np
 import statistics as stat
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/D.jpg'
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/A.jpg'
 img = cv2.imread(CUR_IMAGE_PATH)
 
 def collect_coordinates(row_start=0):
@@ -66,6 +66,10 @@ top = [(i, x[0]) for i, x in enumerate(x_coord_arr)]
 print('removing outliers')
 top = reject_outliers(top, m=2)
 
+# remove middle
+l = len(top)/2
+top = top[:l-30] + top[l+30:]
+
 # connects across all top points
 for i in range(len(top)-1):
 	p1 = top[i]
@@ -78,4 +82,27 @@ for i in range(len(top)-1):
 ## TODO--- lookup fitting a line to nth order polynomial
 ## use 'feeler' to look several pixels ahead/up/down to find next brightest spot
 
-cv2.imwrite('/home/maxberko/seg_automation/despeck_changed.jpg', img)
+
+#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
+cv2.imwrite(NEW_IMAGE_PATH, img)
+
+#####################################################################################
+
+# read in and save a jpeg
+img = cv2.imread(CUR_IMAGE_PATH)
+
+grayscaled = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+## adaptive gaussian thresholding
+# second to last value: focuses on how specific to filter color (higher value = sloppy thresholding)
+# last value: switches between black (neg) and white (pos) -- higher values increase intensity
+threshold = cv2.adaptiveThreshold(grayscaled, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 37, -2)
+
+# TODO-- find a better way to clean up picture
+# remove salt and pepper noise
+# this removes the need for imageJ entirely
+median_reduction = cv2.medianBlur(threshold, 5)
+median_reduction = cv2.medianBlur(median_reduction, 5)
+
+
+cv2.imwrite('/home/maxberko/seg_automation/despeck.jpg', median_reduction)

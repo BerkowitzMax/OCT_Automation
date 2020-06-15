@@ -5,8 +5,8 @@ import numpy as np
 import statistics as stat
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/A.jpg'
-img = cv2.imread(CUR_IMAGE_PATH)
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
+original = cv2.imread(CUR_IMAGE_PATH)
 
 def collect_coordinates(row_start=0):
 	x_coord_arr = [] # array of x coordinate sets
@@ -44,6 +44,13 @@ def reject_outliers(data, m=1):
 
 	return data
 
+# takes in a list of pairs
+def draw(arr, d_img):
+	for i in range(len(arr)-1):
+		p1 = arr[i]
+		p2 = arr[i+1]
+		cv2.line(d_img, (p1[0], p1[1]), (p2[0], p2[1]), (0,255,0), 2)
+
 print('running threshold')
 
 ############################################
@@ -70,27 +77,14 @@ top = reject_outliers(top, m=2)
 l = len(top)/2
 top = top[:l-30] + top[l+30:]
 
-# connects across all top points
-for i in range(len(top)-1):
-	p1 = top[i]
-	p2 = top[i+1]
-	cv2.line(img, (p1[0], p1[1]), (p2[0], p2[1]), (0,255,0), 2)
-
-## TODO--- skip point if it's a suddent change in elevation 
-## INSTEAD of removing outliers, REPLACE these points with neighboring points
-## after this, create and use the gaussian picture where the lines are cleanly separated
 ## TODO--- lookup fitting a line to nth order polynomial
 ## use 'feeler' to look several pixels ahead/up/down to find next brightest spot
 
-
-#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
-cv2.imwrite(NEW_IMAGE_PATH, img)
 
 #####################################################################################
 
 # read in and save a jpeg
 img = cv2.imread(CUR_IMAGE_PATH)
-
 grayscaled = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 ## adaptive gaussian thresholding
@@ -98,11 +92,47 @@ grayscaled = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 # last value: switches between black (neg) and white (pos) -- higher values increase intensity
 threshold = cv2.adaptiveThreshold(grayscaled, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 37, -2)
 
-# TODO-- find a better way to clean up picture
-# remove salt and pepper noise
-# this removes the need for imageJ entirely
+# remove salt and pepper noise- convert to BGR colour channels
 median_reduction = cv2.medianBlur(threshold, 5)
-median_reduction = cv2.medianBlur(median_reduction, 5)
+img = cv2.medianBlur(median_reduction, 5)
+#img = cv2.cvtColor(median_reduction, cv2.COLOR_GRAY2BGR)
+
+## Draw all bottom points connecting top points using despeck
+## ROW START is the correlating top[i] row coordinate
+bot = [] # array of coordinates
+for pair in top:
+	for y in range(pair[1], rows-1): 
+		x = pair[0]
+		# white to black
+		if img[y, x] == 255 and img[y+1, x] == 0:
+			bot.append((x, y+1))
+			break	
+
+print('removing outliers')
+bot = reject_outliers(bot, m=2)
+
+# remove middle
+l = len(bot)/2
+bot = bot[:l-30] + bot[l+30:]
 
 
-cv2.imwrite('/home/maxberko/seg_automation/despeck.jpg', median_reduction)
+## TODO: use binary img to find the absolute
+## bottom then use the despeck image (img) to find the top of that
+
+#brightness of a pixel using BGR/RGB:
+# sum([R, G, B]) / 3 
+
+# connect all points
+draw(top, original)
+draw(bot, original)
+
+
+# writing modified image files
+
+NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
+cv2.imwrite(NEW_IMAGE_PATH, original)
+
+# shows top and bottom clearly but nothing else
+#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_binary.jpg', binary)
+
+cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img)

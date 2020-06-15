@@ -5,7 +5,7 @@ import numpy as np
 import statistics as stat
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/C.jpg'
 original = cv2.imread(CUR_IMAGE_PATH)
 
 def collect_coordinates(row_start=0):
@@ -23,6 +23,7 @@ def collect_coordinates(row_start=0):
 	return x_coord_arr
 
 # data must be numpy array
+# stdev default
 def reject_outliers(data, m=1):
 	y = [y[1] for y in data]
 
@@ -41,6 +42,10 @@ def reject_outliers(data, m=1):
 	for e in iter_list:
 		if e in data:
 			data.remove(e)
+
+	# remove middle
+	l = len(data)/2
+	data = data[:l-30] + data[l+30:]
 
 	return data
 
@@ -73,19 +78,17 @@ top = [(i, x[0]) for i, x in enumerate(x_coord_arr)]
 print('removing outliers')
 top = reject_outliers(top, m=2)
 
-# remove middle
-l = len(top)/2
-top = top[:l-30] + top[l+30:]
-
 ## TODO--- lookup fitting a line to nth order polynomial
 ## use 'feeler' to look several pixels ahead/up/down to find next brightest spot
-
+## TODO: use binary img to find the absolute
+## bottom then use the despeck image (img) to find the top of that
+# brightness of a pixel using BGR/RGB:
+# sum([R, G, B]) / 3 
 
 #####################################################################################
 
 # read in and save a jpeg
-img = cv2.imread(CUR_IMAGE_PATH)
-grayscaled = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+grayscaled = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
 
 ## adaptive gaussian thresholding
 # second to last value: focuses on how specific to filter color (higher value = sloppy thresholding)
@@ -94,45 +97,36 @@ threshold = cv2.adaptiveThreshold(grayscaled, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_
 
 # remove salt and pepper noise- convert to BGR colour channels
 median_reduction = cv2.medianBlur(threshold, 5)
-img = cv2.medianBlur(median_reduction, 5)
+img_thresh = cv2.medianBlur(median_reduction, 5)
 #img = cv2.cvtColor(median_reduction, cv2.COLOR_GRAY2BGR)
 
-## Draw all bottom points connecting top points using despeck
-## ROW START is the correlating top[i] row coordinate
+################################
+# uses thresholded image and top arr
+# of coordinate points to mark the lower
+# strip of the upper bound
+################################
 bot = [] # array of coordinates
 for pair in top:
 	for y in range(pair[1], rows-1): 
 		x = pair[0]
 		# white to black
-		if img[y, x] == 255 and img[y+1, x] == 0:
+		if img_thresh[y, x] == 255 and img_thresh[y+1, x] == 0:
 			bot.append((x, y+1))
 			break	
 
 print('removing outliers')
 bot = reject_outliers(bot, m=2)
 
-# remove middle
-l = len(bot)/2
-bot = bot[:l-30] + bot[l+30:]
-
-
-## TODO: use binary img to find the absolute
-## bottom then use the despeck image (img) to find the top of that
-
-#brightness of a pixel using BGR/RGB:
-# sum([R, G, B]) / 3 
-
-# connect all points
+# connect all points and mark up original image
 draw(top, original)
 draw(bot, original)
 
 
 # writing modified image files
-
 NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
 cv2.imwrite(NEW_IMAGE_PATH, original)
 
 # shows top and bottom clearly but nothing else
 #cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_binary.jpg', binary)
 
-cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img)
+cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img_thresh)

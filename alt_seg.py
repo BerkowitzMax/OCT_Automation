@@ -1,11 +1,12 @@
 #!/usr/bin/python
 # executable for automated segmentation of mouse OCT
+# FIXME-- looping variable names are inaccurate
 import cv2
 import numpy as np
 import statistics as stat
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/C.jpg'
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
 original = cv2.imread(CUR_IMAGE_PATH)
 
 def collect_coordinates(row_start=0):
@@ -69,33 +70,27 @@ rows, cols = img_bw.shape
 
 (thresh, binary) = cv2.threshold(img_bw, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 ## additional manipulation to remove any outliers
-median_reduction = cv2.medianBlur(binary, 5)
+binary = cv2.medianBlur(binary, 5)
 
 print('finding starting row')
 x_coord_arr = collect_coordinates()
 top = [(i, x[0]) for i, x in enumerate(x_coord_arr)]
 
-print('removing outliers')
+print('removing outliers top')
 top = reject_outliers(top, m=2)
 
 ## TODO--- lookup fitting a line to nth order polynomial
-## use 'feeler' to look several pixels ahead/up/down to find next brightest spot
-## TODO: use binary img to find the absolute
-## bottom then use the despeck image (img) to find the top of that
-# brightness of a pixel using BGR/RGB:
-# sum([R, G, B]) / 3 
-
 #####################################################################################
 
 # read in and save a jpeg
 grayscaled = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
 
-## adaptive gaussian thresholding
+## adaptive gaussian thresholdng
 # second to last value: focuses on how specific to filter color (higher value = sloppy thresholding)
 # last value: switches between black (neg) and white (pos) -- higher values increase intensity
 threshold = cv2.adaptiveThreshold(grayscaled, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 37, -2)
-
-# remove salt and pepper noise- convert to BGR colour channels
+#37 -2
+# remove salt and pepper noise- convert to BGR colour channelis
 median_reduction = cv2.medianBlur(threshold, 5)
 img_thresh = cv2.medianBlur(median_reduction, 5)
 #img = cv2.cvtColor(median_reduction, cv2.COLOR_GRAY2BGR)
@@ -114,13 +109,65 @@ for pair in top:
 			bot.append((x, y+1))
 			break	
 
-print('removing outliers')
+print('removing outliers top bottom')
 bot = reject_outliers(bot, m=2)
 
 # connect all points and mark up original image
-draw(top, original)
-draw(bot, original)
+#draw(top, original)
+#draw(bot, original)
 
+## Static threshold
+'''
+_coordinates = []
+mag = []
+for pair in bot:
+	column = pair[0]
+	row = pair[1]
+
+	for r in range(row, rows-1):
+		_coordinates.append((r, column))
+		mag.append(sum(original[r, column])/3)
+
+peaks = []
+for i in range(len(mag)):
+	if mag[i] > 112:
+		r = _coordinates[i][0]
+		c = _coordinates[i][1]
+		original[r, c] = [0, 255, 0]
+'''
+
+###TODO: if this works it'll be more efficient to work in a matrix
+# Adaptive threshold
+# create a series of subimages (blocks-- block size)
+# apply a threshold to each of these subimages
+# can try applying threshold based on the mean
+print('adaptive threshold')
+def thresh_algorithm(main_img, blocksize, coord):
+	mean = 0
+
+	# collect magnitudes per pixel
+	_coordinates = []
+	mag = []
+	for c in range(coord[1], coord[1]+blocksize):
+		for r in range(coord[0], coord[0]+blocksize):
+			s = sum(main_img[r, c])/3
+			mean += s
+
+			_coordinates.append((r, c))
+			mag.append(s)
+
+	mean /= (blocksize * blocksize)
+	for i in range(len(mag)):
+		if mag[i] > mean:
+			r = _coordinates[i][0]
+			c = _coordinates[i][1]
+			main_img[r, c] = [0, 255, 0]
+
+blocksize = 20
+for c in range(0, cols, blocksize):
+	for r in range(0, rows, blocksize):
+		thresh_algorithm(original, blocksize, (r,c))
+original = cv2.medianBlur(original, 11)
 
 # writing modified image files
 NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'

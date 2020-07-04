@@ -3,7 +3,13 @@
 # FIXME-- looping variable names are inaccurate
 import cv2
 import numpy as np
-import statistics as stat
+import math
+import scipy.signal as sig
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import os
 
 CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
@@ -112,62 +118,72 @@ for pair in top:
 print('removing outliers top bottom')
 bot = reject_outliers(bot, m=2)
 
-# connect all points and mark up original image
-#draw(top, original)
-#draw(bot, original)
+# takes in 2 lists of x and y coordinates
+# fits data to 12th degree polynomial
+# plots original data with fitted data and returns
+# best fit
+def curve_fit(x, y):
+	plt.plot(x, y, 'bo-')
 
-## Static threshold
+	x = np.array(x)
+	y = np.array(y)
+
+	x = x.reshape(-1, 1)
+	poly = PolynomialFeatures(degree=12)
+	X_poly = poly.fit_transform(x)
+	poly.fit(X_poly, y)
+
+	linreg = LinearRegression()
+	linreg.fit(X_poly, y)
+
+	y_pred = linreg.predict(X_poly)
+
+	# fitted polynomial
+	plt.plot(x, y_pred, color='red')
+	plt.savefig('0_plot.png')
+
+	return y_pred
+
+# TODO-- take a cut across the row instead of a column
+r = 280
+
+x, y = [], []
+for c in range(0, cols/2, 10):
+	x.append(c)
+	y.append(sum(original[r, c])/3)
+
+fit_y = curve_fit(x, y)
+
+# writing to image
+for i in range(len(fit_y)):
+	if y[i] > fit_y[i]:
+		original[r, x[i]] = [0,255, 0]
+
 '''
-_coordinates = []
-mag = []
-for pair in bot:
-	column = pair[0]
-	row = pair[1]
+#for c in range(0, cols/2-40, 10):
+c = 70
+# TEMPORARILY JUST FOR COLUMN 70
+last = (0, 0)
+for r in range(rows-1, 0, -1):
+	if img_thresh[r, c] == 0 and img_thresh[r-1, c] == 255:
+		last = (c, r)
+		break
 
-	for r in range(row, rows-1):
-		_coordinates.append((r, column))
-		mag.append(sum(original[r, column])/3)
+# using c = 70 as a test example
+# curve fitting 
+x = []
+y = []
+for r in range(top[c][1], last[1]):
+	x.append(r)
+	y.append(sum(original[r, c])/3)
 
-peaks = []
-for i in range(len(mag)):
-	if mag[i] > 112:
-		r = _coordinates[i][0]
-		c = _coordinates[i][1]
-		original[r, c] = [0, 255, 0]
+fit_y = curve_fit(x, y)
+
+# writing to image
+for i in range(len(fit_y)):
+	if y[i] > fit_y[i]:
+		original[x[i], c] = [0,255, 0]
 '''
-
-###TODO: if this works it'll be more efficient to work in a matrix
-# Adaptive threshold
-# create a series of subimages (blocks-- block size)
-# apply a threshold to each of these subimages
-# can try applying threshold based on the mean
-print('adaptive threshold')
-def thresh_algorithm(main_img, blocksize, coord):
-	mean = 0
-
-	# collect magnitudes per pixel
-	_coordinates = []
-	mag = []
-	for c in range(coord[1], coord[1]+blocksize):
-		for r in range(coord[0], coord[0]+blocksize):
-			s = sum(main_img[r, c])/3
-			mean += s
-
-			_coordinates.append((r, c))
-			mag.append(s)
-
-	mean /= (blocksize * blocksize)
-	for i in range(len(mag)):
-		if mag[i] > mean:
-			r = _coordinates[i][0]
-			c = _coordinates[i][1]
-			main_img[r, c] = [0, 255, 0]
-
-blocksize = 20
-for c in range(0, cols, blocksize):
-	for r in range(0, rows, blocksize):
-		thresh_algorithm(original, blocksize, (r,c))
-original = cv2.medianBlur(original, 11)
 
 # writing modified image files
 NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
@@ -177,3 +193,9 @@ cv2.imwrite(NEW_IMAGE_PATH, original)
 #cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_binary.jpg', binary)
 
 cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img_thresh)
+
+# gaussian peaks
+# fourier transform
+# maximum entropy
+
+# comparing dilation to original image

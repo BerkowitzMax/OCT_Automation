@@ -159,6 +159,7 @@ draw(top, original)
 draw(top_lower, original)
 draw(bot, original)
 
+# averages top and bottom line defining the retina
 med = []
 for c in range(cols):
 	green = []
@@ -170,6 +171,7 @@ for c in range(cols):
 		original[avg, c] = [0, 255, 0]
 		med.append((c, avg))
 
+# takes the averaged line and fits it to a 9th degree polynomial
 x, y = [], []
 for p in range(len(med)/2):
 	x.append(med[p][0])
@@ -187,7 +189,9 @@ draw(combined, original, color=(255, 0, 255))
 # edit -> options -> draw a line (500 thickness) across one of the curves
 # edit -> selection -> straighten
 
-
+# do otsu binarization on whole image, and give weightings to line estimations.. maybe make the top of image
+# a baseline, and the top of the retina another baseline
+# for guess lines, MOST of the line has to be above otsu thresh
 
 # This section goes through each row
 # and fits a polynomial through it

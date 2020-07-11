@@ -84,8 +84,8 @@ def curve_fit(x, y, dgr=12):
 	y_pred = linreg.predict(X_poly)
 
 	# fitted polynomial
-	plt.plot(x, y_pred, color='red')
-	plt.savefig('0_plot.png')
+	#plt.plot(x, y_pred, color='red')
+	#plt.savefig('0_plot.png')
 
 	return y_pred
 
@@ -196,6 +196,10 @@ for c in range(cols):
 # a baseline, and the top of the retina another baseline
 # for guess lines, MOST of the line has to be above otsu thresh
 
+# TODO -- subtract like, 20, or something from background to make it darker (maybe 80?)
+# also instead of relying just on img_thresh, blend with original image
+
+
 # find otsu's threshold value with OpenCV function
 cur_img = cv2.imread(CUR_IMAGE_PATH,0)
 blur = cv2.GaussianBlur(cur_img,(5,5),0)
@@ -237,7 +241,6 @@ cv2.imwrite(NEW_IMAGE_PATH, original)
 #cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_binary.jpg', binary)
 
 cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img_thresh)
-
 
 
 

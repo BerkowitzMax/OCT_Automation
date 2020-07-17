@@ -12,7 +12,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/E.jpg'
 original = cv2.imread(CUR_IMAGE_PATH)
 
 def collect_coordinates(row_start=0):
@@ -168,26 +168,37 @@ for c in range(cols):
 
 bot = reject_outliers(bot, m=1)
 
-# Create a 'frame' to adjust final outline to, ensures the correct number
-# of lines are in place
-## the middle line is usually missed-- will prbably need to hardcode that one in
-# for now just focus on getting an accurate curve representation
-
-
 # combining thresholded img with original to highlight
 # areas of interest
 bgr_thresh = cv2.cvtColor(img_thresh, cv2.COLOR_GRAY2BGR)
 original = cv2.addWeighted(original, 0.7, bgr_thresh, 0.3, 0)
 
 print('drawing top, top-bottom, and bottom segments')
-smooth_top = smoothen(top)
+
+## split up into smaller segments
+
+l = len(top)
+smooth_top = smoothen(top[:l/8])
 draw(smooth_top, original)
 
-smooth_toplower = smoothen(top_lower)
+smooth_top = smoothen(top[l/8 : l/4])
+draw(smooth_top, original)
+
+smooth_top = smoothen(top[l/4 : l/2])
+draw(smooth_top, original)
+
+
+l = len(top_lower)
+smooth_toplower = smoothen(top_lower[:l/8])
 draw(smooth_toplower, original)
 
-smooth_bot = smoothen(bot)
-draw(smooth_bot, original)
+smooth_toplower = smoothen(top_lower[l/8 : l/4])
+draw(smooth_toplower, original)
+
+smooth_toplower = smoothen(top_lower[l/4 : l/2])
+draw(smooth_toplower, original)
+
+draw(bot, original)
 
 #####################################################################################
 # shift curve approximations to best fits

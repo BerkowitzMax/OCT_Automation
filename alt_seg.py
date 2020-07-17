@@ -52,7 +52,7 @@ def reject_outliers(data, m=1):
 
 	# remove middle
 	l = len(data)/2
-	data = data[:l-30] + data[l+30:]
+	data = data[:l-60] + data[l+60:]
 
 	return data
 
@@ -154,11 +154,10 @@ for pair in top:
 		if img_thresh[y, x] == 255 and img_thresh[y+1, x] == 0:
 			top_lower.append((x, y+1))
 			break	
-
-print('removing outliers top bottom')
 top_lower = reject_outliers(top_lower, m=2)
 
 
+print('retina bottom')
 # use thresholded image to find bottom of retina
 bot = []
 for c in range(cols):
@@ -169,6 +168,19 @@ for c in range(cols):
 
 bot = reject_outliers(bot, m=1)
 
+# Create a 'frame' to adjust final outline to, ensures the correct number
+# of lines are in place
+
+## TODO -- give every pixel a weighting, iterate through every 
+## 10 rows-- place a point in the center (5th) and create a diameter
+## of 5 all the way around, select next highest weighting thats also the rightmost (vertical) point
+
+# combining thresholded img with original to highlight
+# areas of interest
+bgr_thresh = cv2.cvtColor(img_thresh, cv2.COLOR_GRAY2BGR)
+original = cv2.addWeighted(original, 0.7, bgr_thresh, 0.3, 0)
+
+print('drawing top, top-bottom, and bottom segments')
 # smoothes out curves
 smooth_top = smoothen(top)
 draw(smooth_top, original)
@@ -192,14 +204,6 @@ for c in range(cols):
 		original[avg, c] = [0, 255, 0]
 		med.append((c, avg))
 
-# do otsu binarization on whole image, and give weightings to line estimations.. maybe make the top of image
-# a baseline, and the top of the retina another baseline
-# for guess lines, MOST of the line has to be above otsu thresh
-
-# TODO -- subtract like, 20, or something from background to make it darker (maybe 80?)
-# also instead of relying just on img_thresh, blend with original image
-
-
 # find otsu's threshold value with OpenCV function
 cur_img = cv2.imread(CUR_IMAGE_PATH,0)
 blur = cv2.GaussianBlur(cur_img,(5,5),0)
@@ -207,12 +211,13 @@ ret, otsu = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 tval = ret
 
 # line: (c, r)
-# takes in a list of coordinates and produces a weighting
-# based on otsu's binarization
-# possible weight measures: 
+#####################################################################
+# takes in a list of coordinates and produces a weighting based on 
+# otsu's binarization possible weight measures: 
 # 		* most of the lines has to be above otsu thresh value
 #		* take avg grayscale value
-### Currently makes decisions based on img_thresh-- the thresholded greyscaled image
+# decisions based on img_thresh and otsu's binarization
+#####################################################################
 def give_weight(line, thresh):
 	above = 0
 	for i in line:

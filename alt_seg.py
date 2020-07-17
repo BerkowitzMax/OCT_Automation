@@ -94,7 +94,7 @@ def curve_fit(x, y, dgr=12):
 # fits to 9th degree polynomial
 def smoothen(arr):
 	x, y = [], []
-	for p in range(len(arr)/2):
+	for p in range(len(arr)):
 		x.append(arr[p][0])
 		y.append(arr[p][1])
 	pred_y = curve_fit(x, y, dgr=9)
@@ -124,7 +124,7 @@ x_coord_arr = collect_coordinates()
 top = [(i, x[0]) for i, x in enumerate(x_coord_arr)]
 
 print('removing outliers top')
-top = reject_outliers(top, m=2)
+#top = reject_outliers(top, m=2)
 
 #####################################################################################
 
@@ -170,10 +170,9 @@ bot = reject_outliers(bot, m=1)
 
 # Create a 'frame' to adjust final outline to, ensures the correct number
 # of lines are in place
+## the middle line is usually missed-- will prbably need to hardcode that one in
+# for now just focus on getting an accurate curve representation
 
-## TODO -- give every pixel a weighting, iterate through every 
-## 10 rows-- place a point in the center (5th) and create a diameter
-## of 5 all the way around, select next highest weighting thats also the rightmost (vertical) point
 
 # combining thresholded img with original to highlight
 # areas of interest
@@ -181,7 +180,6 @@ bgr_thresh = cv2.cvtColor(img_thresh, cv2.COLOR_GRAY2BGR)
 original = cv2.addWeighted(original, 0.7, bgr_thresh, 0.3, 0)
 
 print('drawing top, top-bottom, and bottom segments')
-# smoothes out curves
 smooth_top = smoothen(top)
 draw(smooth_top, original)
 
@@ -192,6 +190,7 @@ smooth_bot = smoothen(bot)
 draw(smooth_bot, original)
 
 #####################################################################################
+# shift curve approximations to best fits
 # averages top and bottom lines defining the retina
 med = []
 for c in range(cols):

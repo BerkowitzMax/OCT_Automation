@@ -12,7 +12,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/E.jpg'
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
 original = cv2.imread(CUR_IMAGE_PATH)
 
 def collect_coordinates(row_start=0):

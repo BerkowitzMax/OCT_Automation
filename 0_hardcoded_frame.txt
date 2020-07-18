@@ -1,0 +1,53 @@
+## use and eliminate existing lines before creating new ones
+## distances between top line and other lines
+## look at relative ratios
+# top = 0%
+# last line = 100%
+
+example_stack:
+	top-1	12 pxl	10%
+	top-2	38 pxl	21%
+	top-3	60 pxl	49%
+	top-4	93 pxl	76%
+	top-5	123 pxl	100%
+
+
+A:
+	top-1	12 pxl	9%
+	top-2	47 pxl	34%
+	top-3	72 pxl	52%
+	top-4	108 pxl	78%
+	top-5	138 pxl	100%
+
+
+B:
+	top-1	11 pxl	8%
+	top-2	45 pxl	34%
+	top-3	66 pxl	49%
+	top-4	104 pxl	78%
+	top-5	134 pxl	100%
+
+
+C:
+	top-1	12 pxl	9%
+	top-2	43 pxl	32%
+	top-3	67 pxl	50%
+	top-4	105 pxl	78%
+	top-5	135 pxl	100%
+
+
+D:
+	top-1	11 pxl	8%
+	top-2	43 pxl	32%
+	top-3	67 pxl	50%
+	top-4	104 pxl	77%
+	top-5	135 pxl	100%
+
+
+E:
+	top-1	15 pxl	11%
+	top-2	52 pxl	37%
+	top-3	75 pxl	53%
+	top-4	112 pxl	79%
+	top-5	142 pxl	100%
+

@@ -1,6 +1,6 @@
 ## use and eliminate existing lines before creating new ones
 ## distances between top line and other lines
-## look at relative ratios
+## relative ratios
 # top = 0%
 # last line = 100%
 
@@ -51,3 +51,10 @@ E:
 	top-4	112 pxl	79%
 	top-5	142 pxl	100%
 
+
+AVG:
+	top-1	9%
+	top-2	32%
+	top-3	51%
+	top-4	77%
+	top-5	100%

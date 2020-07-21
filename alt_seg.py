@@ -1,16 +1,29 @@
 #!/usr/bin/python
 # executable for automated segmentation of mouse OCT
-# FIXME-- looping variable names are inaccurate
+
 import cv2
 import numpy as np
-import math
-import scipy.signal as sig
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import copy
 import os
+
+# todo-- record the line
+# record the rows the line is drawn on
+# USE THE GRAPHING THING LIKE WITH GREYSCALE BUT WITH GREEN NOW
+
+## beginning of retina = 0.00
+## last important line = 1.00
+_frame = {
+	't-1': 0.09,
+	't-2': 0.32,
+	't-3': 0.51,
+	't-4': 0.77,
+	't-5': 1.00
+}
 
 CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
 original = cv2.imread(CUR_IMAGE_PATH)
@@ -175,43 +188,49 @@ original = cv2.addWeighted(original, 0.7, bgr_thresh, 0.3, 0)
 
 print('drawing top, top-bottom, and bottom segments')
 
-## split up into smaller segments
+# used for main 3 lines only
+# used to place lines on original
+markup = copy.deepcopy(original)
 
+# mark up copy of original with all lines marked
+copy = copy.deepcopy(original)
+draw(bot, copy)
+
+## split up into smaller segments
 l = len(top)
 smooth_top = smoothen(top[:l/8])
-draw(smooth_top, original)
+draw(smooth_top, copy)
 
 smooth_top = smoothen(top[l/8 : l/4])
-draw(smooth_top, original)
+draw(smooth_top, copy)
 
 smooth_top = smoothen(top[l/4 : l/2])
-draw(smooth_top, original)
+draw(smooth_top, copy)
 
 
 l = len(top_lower)
 smooth_toplower = smoothen(top_lower[:l/8])
-draw(smooth_toplower, original)
+draw(smooth_toplower, copy)
 
 smooth_toplower = smoothen(top_lower[l/8 : l/4])
-draw(smooth_toplower, original)
+draw(smooth_toplower, copy)
 
 smooth_toplower = smoothen(top_lower[l/4 : l/2])
-draw(smooth_toplower, original)
-
-draw(bot, original)
+draw(smooth_toplower, copy)
 
 #####################################################################################
+
 # shift curve approximations to best fits
 # averages top and bottom lines defining the retina
 med = []
 for c in range(cols):
 	green = []
 	for r in range(rows-1):
-		if list(original[r, c]) != [0, 255, 0] and list(original[r+1, c]) == [0, 255, 0]:
+		if list(copy[r, c]) != [0, 255, 0] and list(copy[r+1, c]) == [0, 255, 0]:
 			green.append((c, r))
 	if len(green) == 3:
 		avg = (green[0][1] + green[1][1])/2
-		original[avg, c] = [0, 255, 0]
+		copy[avg, c] = [0, 255, 0]
 		med.append((c, avg))
 
 # find otsu's threshold value with OpenCV function
@@ -238,7 +257,7 @@ def give_weight(line, thresh):
 # (c, r)
 # line iterations-- going downwards
 shift = 0
-for r in range(med[0][1], bot[0][1]):
+for r in range(top[0][1], bot[0][1]):
 	cur_line = []
 	shift += 1
 
@@ -246,7 +265,56 @@ for r in range(med[0][1], bot[0][1]):
 		cur_line.append((p[0], p[1]+shift))
 
 	if give_weight(cur_line, tval):
-		draw(cur_line, original)
+		draw(cur_line, markup)
+
+
+
+# TESTING POST SEG
+# arbitrary column, shouldn't matter
+x, y = [], []
+c = 120
+for r in range(rows):
+	x.append(r)
+	if list(markup[r, c]) == [0, 255, 0]:
+		y.append(255)
+	else:
+		y.append(0)
+
+plt.plot(x, y, color='red')
+plt.savefig('0_plot.png')
+
+# TOP OF RETINA
+# preserve x coordinate, shift y coordinate by a const value 
+# to align with top of retina
+# just uses first coordinate for now
+approx = []
+const_shift = abs(top[0][1] - med[0][1]) 
+for p in med:
+	approx.append((p[0], p[1] - const_shift))
+draw(approx, original)
+
+
+def shift(shift_val):
+	line = []
+	for p in approx:
+		line.append((p[0], p[1] + const_shift))
+	draw(line, original)
+
+# BOTTOM PORTION TOP OF RETINA
+# mark the first two segments
+shift_val = abs(top_lower[0][1] - top[0][1])
+shift(shift_val)
+
+# iterate through y-axis
+#for i, val in enumerate(y):
+
+
+# TEMP COPY
+NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
+cv2.imwrite(NEW_IMAGE_PATH, copy)
+
+NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_markup.jpg'
+cv2.imwrite(NEW_IMAGE_PATH, markup)
 
 # writing modified image files
 NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'

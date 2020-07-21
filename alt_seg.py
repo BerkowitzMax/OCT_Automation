@@ -267,9 +267,13 @@ for r in range(top[0][1], bot[0][1]):
 	if give_weight(cur_line, tval):
 		draw(cur_line, markup)
 
-
+#####################################################################################
+# eventually ensure that all lists have an equal number of points
+# currently this isn't the case when lists are ran through the reject_outliers function
 
 # TESTING POST SEG
+# TODO-- maybe make this a separate program & allow more specific
+# 	user input
 # arbitrary column, shouldn't matter
 x, y = [], []
 c = 120
@@ -283,10 +287,11 @@ for r in range(rows):
 plt.plot(x, y, color='red')
 plt.savefig('0_plot.png')
 
+
 # TOP OF RETINA
 # preserve x coordinate, shift y coordinate by a const value 
 # to align with top of retina
-# just uses first coordinate for now
+# TODO just uses first coordinate for now
 approx = []
 const_shift = abs(top[0][1] - med[0][1]) 
 for p in med:
@@ -297,16 +302,33 @@ draw(approx, original)
 def shift(shift_val):
 	line = []
 	for p in approx:
-		line.append((p[0], p[1] + const_shift))
+		line.append((p[0], p[1] + shift_val))
 	draw(line, original)
+
 
 # BOTTOM PORTION TOP OF RETINA
 # mark the first two segments
 shift_val = abs(top_lower[0][1] - top[0][1])
 shift(shift_val)
 
-# iterate through y-axis
-#for i, val in enumerate(y):
+# go through every POSSIBLE line
+# take mean of segments and iterate through y-axis
+shift_values = [] # contains the shift values from the top of the retina
+a, b = -1, -1
+for i in range(len(y)-1):
+	if y[i] == 0 and y[i+1] == 255:
+		a = i
+	if y[i] == 255 and y[i+1] == 0:
+		b = i+1
+
+	if b != -1:
+		val = abs(approx[c][1] - (a+b)/2)
+		shift(val)
+		shift_values.append(val)
+		a, b = -1, -1
+print(shift_values)
+
+
 
 
 # TEMP COPY
@@ -326,14 +348,20 @@ cv2.imwrite(NEW_IMAGE_PATH, original)
 cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img_thresh)
 
 
+'''
+## beginning of retina = 0.00
+## last important line = 1.00
+_frame = {
+	't-1': 0.09,
+	't-2': 0.32,
+	't-3': 0.51,
+	't-4': 0.77,
+	't-5': 1.00
+}
+'''
+
 
 # ADDITIONAL NOTES #########################
-# gaussian peaks
-# fourier transform
-# maximum entropy
-
-# comparing dilation to original image
-
 # TODO-- try straightening the image out in imagej
 # then do the ctrl+k filter thing to find peaks
 # edit -> options -> draw a line (500 thickness) across one of the curves

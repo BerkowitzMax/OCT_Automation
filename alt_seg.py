@@ -284,9 +284,6 @@ for r in range(rows):
 	else:
 		y.append(0)
 
-plt.plot(x, y, color='red')
-plt.savefig('0_plot.png')
-
 
 # TOP OF RETINA
 # preserve x coordinate, shift y coordinate by a const value 
@@ -323,13 +320,36 @@ for i in range(len(y)-1):
 
 	if b != -1:
 		val = abs(approx[c][1] - (a+b)/2)
-		shift(val)
 		shift_values.append(val)
 		a, b = -1, -1
+
+# t-1 check
+# purge incorrect lines between t-1
+# 5% intolerance
+dif = abs(top_lower[0][1] - top[0][1])
+for val in shift_values:
+	if val < dif + (dif*0.05):
+		shift_values.remove(val)
+
 print(shift_values)
 
 
+'''
+TODO
+# ensure the correct number of lines
+# unnecessary lines get removed
+# missing lines get added
+'''
 
+
+
+
+
+
+
+# final layering
+for val in shift_values:
+	shift(val)
 
 # TEMP COPY
 NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'

@@ -8,12 +8,12 @@ from sklearn.preprocessing import PolynomialFeatures
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+from tkinter import *
+from PIL import ImageTk, Image
+
 import copy
 import os
-
-# todo-- record the line
-# record the rows the line is drawn on
-# USE THE GRAPHING THING LIKE WITH GREYSCALE BUT WITH GREEN NOW
 
 ## beginning of retina = 0.00
 ## last important line = 1.00
@@ -337,15 +337,13 @@ print(shift_values)
 '''
 TODO
 # ensure the correct number of lines
-# unnecessary lines get removed
-# missing lines get added
+# unnecessary lines get removed-- solution: allow user to remove this lines themselves
+# missing lines get added-- 
 '''
 
-
-
-
-
-
+# what if kept shifting backwards until a 'middle' value was accepted
+for val in shift_values:
+	print(float(val)/shift_values[-3])
 
 # final layering
 for val in shift_values:
@@ -380,9 +378,23 @@ _frame = {
 }
 '''
 
+### GUI of original picture
+#cv2.imshow('thing', original)
+#cv2.waitKey(0) # waits until a key is pressed
+#cv2.destroyAllWindows() # destroys the window showing image
 
-# ADDITIONAL NOTES #########################
-# TODO-- try straightening the image out in imagej
-# then do the ctrl+k filter thing to find peaks
-# edit -> options -> draw a line (500 thickness) across one of the curves
-# edit -> selection -> straighten
+
+### tkinter experimenting
+root = Tk()
+
+# image converter to show image using tkinter
+tk_img = ImageTk.PhotoImage(Image.open(CUR_IMAGE_PATH))
+label = Label(image=tk_img)
+label.pack()
+
+# quit-out button
+quit_button = Button(root, text='Exit', command=root.quit)
+quit_button.pack()
+
+# event loop
+root.mainloop()

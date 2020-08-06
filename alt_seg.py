@@ -15,18 +15,9 @@ from PIL import ImageTk, Image
 import copy
 import os
 
-## beginning of retina = 0.00
-## last important line = 1.00
-_frame = {
-	't-1': 0.09,
-	't-2': 0.32,
-	't-3': 0.51,
-	't-4': 0.77,
-	't-5': 1.00
-}
-
 CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
 original = cv2.imread(CUR_IMAGE_PATH)
+c_original = copy.deepcopy(original)
 
 def collect_coordinates(row_start=0):
 	x_coord_arr = [] # array of x coordinate sets
@@ -184,8 +175,6 @@ bot = reject_outliers(bot, m=1)
 # combining thresholded img with original to highlight
 # areas of interest
 bgr_thresh = cv2.cvtColor(img_thresh, cv2.COLOR_GRAY2BGR)
-original = cv2.addWeighted(original, 0.7, bgr_thresh, 0.3, 0)
-
 print('drawing top, top-bottom, and bottom segments')
 
 # used for main 3 lines only
@@ -194,6 +183,10 @@ markup = copy.deepcopy(original)
 
 # mark up copy of original with all lines marked
 copy = copy.deepcopy(original)
+
+markup = cv2.addWeighted(original, 0.7, bgr_thresh, 0.3, 0)
+copy = cv2.addWeighted(original, 0.7, bgr_thresh, 0.3, 0)
+
 draw(bot, copy)
 
 ## split up into smaller segments
@@ -268,9 +261,6 @@ for r in range(top[0][1], bot[0][1]):
 		draw(cur_line, markup)
 
 #####################################################################################
-# eventually ensure that all lists have an equal number of points
-# currently this isn't the case when lists are ran through the reject_outliers function
-
 # TESTING POST SEG
 # TODO-- maybe make this a separate program & allow more specific
 # 	user input
@@ -295,45 +285,17 @@ for p in med:
 	approx.append((p[0], p[1] - const_shift))
 draw(approx, original)
 
-
+# shifts baseline by certain amount
 def shift(shift_val):
 	line = []
 	for p in approx:
 		line.append((p[0], p[1] + shift_val))
 	draw(line, original)
 
+# contains the shift values from the top of the retina
+shift_values = []
 
-# BOTTOM PORTION TOP OF RETINA
-# mark the first two segments
-shift_val = abs(top_lower[0][1] - top[0][1])
-shift(shift_val)
-
-# go through every POSSIBLE line
-# take mean of segments and iterate through y-axis
-shift_values = [] # contains the shift values from the top of the retina
-a, b = -1, -1
-for i in range(len(y)-1):
-	if y[i] == 0 and y[i+1] == 255:
-		a = i
-	if y[i] == 255 and y[i+1] == 0:
-		b = i+1
-
-	if b != -1:
-		val = abs(approx[c][1] - (a+b)/2)
-		shift_values.append(val)
-		a, b = -1, -1
-
-# t-1 check
-# purge incorrect lines between t-1
-# 5% intolerance
-dif = abs(top_lower[0][1] - top[0][1])
-for val in shift_values:
-	if val < dif + (dif*0.05):
-		shift_values.remove(val)
-
-print(shift_values)
-
-
+#####################################################################################
 '''
 TODO
 # ensure the correct number of lines
@@ -341,56 +303,51 @@ TODO
 # missing lines get added-- 
 '''
 
-# what if kept shifting backwards until a 'middle' value was accepted
-for val in shift_values:
-	print(float(val)/shift_values[-3])
-
-# final layering
-for val in shift_values:
-	shift(val)
-
 # TEMP COPY
-NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
-cv2.imwrite(NEW_IMAGE_PATH, copy)
+#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
+#cv2.imwrite(NEW_IMAGE_PATH, copy)
 
-NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_markup.jpg'
-cv2.imwrite(NEW_IMAGE_PATH, markup)
-
-# writing modified image files
-NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
-cv2.imwrite(NEW_IMAGE_PATH, original)
+#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_markup.jpg'
+#cv2.imwrite(NEW_IMAGE_PATH, markup)
 
 # shows top and bottom clearly but nothing else
 #cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_binary.jpg', binary)
 
-cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img_thresh)
+#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img_thresh)
 
 
-'''
-## beginning of retina = 0.00
-## last important line = 1.00
-_frame = {
-	't-1': 0.09,
-	't-2': 0.32,
-	't-3': 0.51,
-	't-4': 0.77,
-	't-5': 1.00
-}
-'''
 
-### GUI of original picture
-#cv2.imshow('thing', original)
-#cv2.waitKey(0) # waits until a key is pressed
-#cv2.destroyAllWindows() # destroys the window showing image
 
+
+# c is currently set, arbitrarily, to 120
+# draw a vertical line where shift occurs to mark it up
+for r in range(rows):
+	c_original[r, c] = [0, 255, 0]
+
+NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
+cv2.imwrite(NEW_IMAGE_PATH, c_original)
 
 ### tkinter experimenting
 root = Tk()
 
 # image converter to show image using tkinter
-tk_img = ImageTk.PhotoImage(Image.open(CUR_IMAGE_PATH))
-label = Label(image=tk_img)
-label.pack()
+tk_img = ImageTk.PhotoImage(Image.open(NEW_IMAGE_PATH))
+img_label = Label(image=tk_img)
+img_label.pack()
+
+
+# print current mouse coordinates whenever button 1 is clicked
+def click(e):
+	lbl.config(text=str(e.x) + ', ' + str(e.y))
+
+	shift_values.append(e.y)
+
+
+lbl = Label(root, text='')
+lbl.pack()
+
+root.bind('<Button>', click)
+
 
 # quit-out button
 quit_button = Button(root, text='Exit', command=root.quit)
@@ -398,3 +355,32 @@ quit_button.pack()
 
 # event loop
 root.mainloop()
+
+
+# zeroing values and shifting
+for i in range(1, len(shift_values)):
+	shift_values[i] = abs(shift_values[i] - shift_values[0])
+shift_values[0] = 0
+
+# TEMP MANUALLY DELETE LAST?
+shift_values.remove(shift_values[-1])
+print(shift_values)
+
+for val in shift_values:
+	shift(val)
+
+# writing final image file
+FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
+cv2.imwrite(FINAL_IMAGE_PATH, original)
+
+# PLAN
+'''
+1. Have the original, unaltered image up [done]
+2. Have the guessed curve for the right half saved [done?]
+3. Draw a vertical line on image [done]
+4. Have user click on the vertical lines that intersect with the points of interest
+5. Plot based on the shift
+
+^^ repeat for left hand side
+ensure that it's the same number of both sides then link them
+'''

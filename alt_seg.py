@@ -15,7 +15,7 @@ from PIL import ImageTk, Image
 import copy
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/A.jpg'
 original = cv2.imread(CUR_IMAGE_PATH)
 c_original = copy.deepcopy(original)
 
@@ -261,20 +261,6 @@ for r in range(top[0][1], bot[0][1]):
 		draw(cur_line, markup)
 
 #####################################################################################
-# TESTING POST SEG
-# TODO-- maybe make this a separate program & allow more specific
-# 	user input
-# arbitrary column, shouldn't matter
-x, y = [], []
-c = 120
-for r in range(rows):
-	x.append(r)
-	if list(markup[r, c]) == [0, 255, 0]:
-		y.append(255)
-	else:
-		y.append(0)
-
-
 # TOP OF RETINA
 # preserve x coordinate, shift y coordinate by a const value 
 # to align with top of retina
@@ -303,22 +289,7 @@ TODO
 # missing lines get added-- 
 '''
 
-# TEMP COPY
-#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
-#cv2.imwrite(NEW_IMAGE_PATH, copy)
-
-#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_markup.jpg'
-#cv2.imwrite(NEW_IMAGE_PATH, markup)
-
-# shows top and bottom clearly but nothing else
-#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_binary.jpg', binary)
-
-#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img_thresh)
-
-
-
-
-
+c = 120
 # c is currently set, arbitrarily, to 120
 # draw a vertical line where shift occurs to mark it up
 for r in range(rows):
@@ -384,3 +355,19 @@ cv2.imwrite(FINAL_IMAGE_PATH, original)
 ^^ repeat for left hand side
 ensure that it's the same number of both sides then link them
 '''
+
+
+
+
+
+# alternative copies of image analysis in-progress
+#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
+#cv2.imwrite(NEW_IMAGE_PATH, copy)
+
+#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_markup.jpg'
+#cv2.imwrite(NEW_IMAGE_PATH, markup)
+
+# shows top and bottom clearly but nothing else
+#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_binary.jpg', binary)
+
+#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img_thresh)

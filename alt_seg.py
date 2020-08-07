@@ -434,18 +434,49 @@ print(R_shift_values)
 # takes 'approx' list, which is the zero'd avg line and
 # shifts baseline by certain amount
 def shift(idx):
+	color = (0, 255, 0)
+	if idx == 0:
+		color = (249, 249, 249)
+	elif idx == 1:
+		color = (250, 250, 250)
+	elif idx == 2:
+		color = (252, 252, 252)
+	elif idx == 3:
+		color = (253, 253, 253)
+	elif idx == 4:
+		color = (254, 254, 254)
+	elif idx == 5:
+		color = (255, 255, 255)
+
 	L_shft = L_shift_values[idx]
 	line = []
 	for p in L_approx:
 		line.append((p[0], p[1] + L_shft))
-	draw(line, original)
+	draw(line, original, color=color)
 
 
 	R_shft = R_shift_values[idx]
 	line = []
 	for p in R_approx:
 		line.append((p[0], p[1] + R_shft))
-	draw(line, original)
+	draw(line, original, color=color)
+
+	# connect left and right side
+	p1 = (L_approx[-1][0], L_approx[-1][1] + L_shft)
+	p2 = (R_approx[0][0], R_approx[0][1] + R_shft)
+	cv2.line(original, (p1[0], p1[1]), (p2[0], p2[1]), color, 1)
+
+
+	# clean up edges
+	# (left)
+	edge = (0, R_approx[0][1] + L_shft)
+	p = (L_approx[0][0], R_approx[0][1] + L_shft)
+	cv2.line(original, (edge[0], edge[1]), (p[0], p[1]), color, 1)
+
+	# (right)
+	edge = (cols, R_approx[-1][1] + R_shft)
+	p = (R_approx[-1][0], R_approx[-1][1] + R_shft)
+	cv2.line(original, (edge[0], edge[1]), (p[0], p[1]), color, 1)
 
 
 for val in range(len(R_shift_values)):

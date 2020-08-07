@@ -224,21 +224,14 @@ for c in range(cols):
 # preserve x coordinate, shift y coordinate by a const value 
 # to align with top of retina
 # TODO just uses first coordinate for now
-approx = []
+L_approx = []
 const_shift = abs(top[0][1] - med[0][1]) 
 for p in med:
-	approx.append((p[0], p[1] - const_shift))
-draw(approx, original)
-
-# shifts baseline by certain amount
-def shift(shift_val):
-	line = []
-	for p in approx:
-		line.append((p[0], p[1] + shift_val))
-	draw(line, original)
+	L_approx.append((p[0], p[1] - const_shift))
+draw(L_approx, original)
 
 # contains the shift values from the top of the retina
-shift_values = []
+L_shift_values = []
 
 c = 120
 # c is currently set, arbitrarily, to 120
@@ -259,16 +252,16 @@ img_label.pack()
 
 
 # print current mouse coordinates whenever button 1 is clicked
-def click(e):
+def Lclick(e):
 	lbl.config(text=str(e.x) + ', ' + str(e.y))
 
-	shift_values.append(e.y)
+	L_shift_values.append(e.y)
 
 
 lbl = Label(root, text='')
 lbl.pack()
 
-root.bind('<Button>', click)
+root.bind('<Button>', Lclick)
 
 
 # quit-out button
@@ -278,19 +271,15 @@ root.mainloop()
 
 
 # zeroing values and shifting
-for i in range(1, len(shift_values)):
-	shift_values[i] = abs(shift_values[i] - shift_values[0])
-shift_values[0] = 0
+for i in range(1, len(L_shift_values)):
+	L_shift_values[i] = abs(L_shift_values[i] - L_shift_values[0])
+L_shift_values[0] = 0
 
 # TEMP MANUALLY DELETE LAST?
-shift_values.remove(shift_values[-1])
-print(shift_values)
+L_shift_values.remove(L_shift_values[-1])
+print(L_shift_values)
 
 # FIXME-- raise error if incorrect number
-
-
-for val in shift_values:
-	shift(val)
 
 # writing final image file
 FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
@@ -367,8 +356,7 @@ smooth_toplower = smoothen(top_lower[half + l/4 : half + l/2])
 draw(smooth_toplower, copy)
 
 #####################################################################################
-# shift curve approximations to best fits
-# averages top and bottom lines defining the retina
+# Creates averaged line
 med = []
 for c in range(cols):
 	green = []
@@ -380,25 +368,24 @@ for c in range(cols):
 		copy[avg, c] = [0, 255, 0]
 		med.append((c, avg))
 
-NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
-cv2.imwrite(NEW_IMAGE_PATH, copy)
-exit()
 #####################################################################################
 # TOP OF RETINA
 # preserve x coordinate, shift y coordinate by a const value 
 # to align with top of retina
 # TODO just uses first coordinate for now
-approx = []
+top = top[len(top)/2 + 60 :]
+R_approx = []
 const_shift = abs(top[0][1] - med[0][1]) 
 for p in med:
-	approx.append((p[0], p[1] - const_shift))
-draw(approx, original)
+	R_approx.append((p[0], p[1] - const_shift))
+draw(R_approx, original)
+
 
 # contains the shift values from the top of the retina
-shift_values = []
+R_shift_values = []
 
-c = 700
-# c is currently set, arbitrarily, to 120
+c = 850
+# c is currently set, arbitrarily, to 850
 # draw a vertical line where shift occurs to mark it up
 for r in range(rows):
 	c_original[r, c] = [0, 255, 0]
@@ -414,10 +401,16 @@ tk_img = ImageTk.PhotoImage(Image.open(NEW_IMAGE_PATH))
 img_label = Label(image=tk_img)
 img_label.pack()
 
+
+# print current mouse coordinates whenever button 1 is clicked
+def Rclick(e):
+	lbl.config(text=str(e.x) + ', ' + str(e.y))
+	R_shift_values.append(e.y)
+
 lbl = Label(root, text='')
 lbl.pack()
 
-root.bind('<Button>', click)
+root.bind('<Button>', Rclick)
 
 
 # quit-out button
@@ -427,18 +420,35 @@ root.mainloop()
 
 
 # zeroing values and shifting
-for i in range(1, len(shift_values)):
-	shift_values[i] = abs(shift_values[i] - shift_values[0])
-shift_values[0] = 0
+for i in range(1, len(R_shift_values)):
+	R_shift_values[i] = abs(R_shift_values[i] - R_shift_values[0])
+R_shift_values[0] = 0
 
 # TEMP MANUALLY DELETE LAST?
-shift_values.remove(shift_values[-1])
-print(shift_values)
+R_shift_values.remove(R_shift_values[-1])
+print(R_shift_values)
 
 # FIXME-- raise error if incorrect number
 
 
-for val in shift_values:
+# takes 'approx' list, which is the zero'd avg line and
+# shifts baseline by certain amount
+def shift(idx):
+	L_shft = L_shift_values[idx]
+	line = []
+	for p in L_approx:
+		line.append((p[0], p[1] + L_shft))
+	draw(line, original)
+
+
+	R_shft = R_shift_values[idx]
+	line = []
+	for p in R_approx:
+		line.append((p[0], p[1] + R_shft))
+	draw(line, original)
+
+
+for val in range(len(R_shift_values)):
 	shift(val)
 
 # writing final image file

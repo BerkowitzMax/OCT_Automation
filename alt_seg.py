@@ -15,7 +15,7 @@ from PIL import ImageTk, Image
 import copy
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/A.jpg'
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
 original = cv2.imread(CUR_IMAGE_PATH)
 c_original = copy.deepcopy(original)
 
@@ -128,7 +128,7 @@ x_coord_arr = collect_coordinates()
 top = [(i, x[0]) for i, x in enumerate(x_coord_arr)]
 
 print('removing outliers top')
-#top = reject_outliers(top, m=2)
+top = reject_outliers(top, m=2)
 
 #####################################################################################
 
@@ -177,14 +177,8 @@ bot = reject_outliers(bot, m=1)
 bgr_thresh = cv2.cvtColor(img_thresh, cv2.COLOR_GRAY2BGR)
 print('drawing top, top-bottom, and bottom segments')
 
-# used for main 3 lines only
-# used to place lines on original
-markup = copy.deepcopy(original)
-
 # mark up copy of original with all lines marked
 copy = copy.deepcopy(original)
-
-markup = cv2.addWeighted(original, 0.7, bgr_thresh, 0.3, 0)
 copy = cv2.addWeighted(original, 0.7, bgr_thresh, 0.3, 0)
 
 draw(bot, copy)
@@ -212,7 +206,6 @@ smooth_toplower = smoothen(top_lower[l/4 : l/2])
 draw(smooth_toplower, copy)
 
 #####################################################################################
-
 # shift curve approximations to best fits
 # averages top and bottom lines defining the retina
 med = []
@@ -225,40 +218,6 @@ for c in range(cols):
 		avg = (green[0][1] + green[1][1])/2
 		copy[avg, c] = [0, 255, 0]
 		med.append((c, avg))
-
-# find otsu's threshold value with OpenCV function
-cur_img = cv2.imread(CUR_IMAGE_PATH,0)
-blur = cv2.GaussianBlur(cur_img,(5,5),0)
-ret, otsu = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-tval = ret
-
-# line: (c, r)
-#####################################################################
-# takes in a list of coordinates and produces a weighting based on 
-# otsu's binarization possible weight measures: 
-# 		* most of the lines has to be above otsu thresh value
-#		* take avg grayscale value
-# decisions based on img_thresh and otsu's binarization
-#####################################################################
-def give_weight(line, thresh):
-	above = 0
-	for i in line:
-		if img_thresh[i[1], i[0]] > thresh:
-			above += 1
-	return above > len(line)/2
-
-# (c, r)
-# line iterations-- going downwards
-shift = 0
-for r in range(top[0][1], bot[0][1]):
-	cur_line = []
-	shift += 1
-
-	for p in med:
-		cur_line.append((p[0], p[1]+shift))
-
-	if give_weight(cur_line, tval):
-		draw(cur_line, markup)
 
 #####################################################################################
 # TOP OF RETINA
@@ -280,14 +239,6 @@ def shift(shift_val):
 
 # contains the shift values from the top of the retina
 shift_values = []
-
-#####################################################################################
-'''
-TODO
-# ensure the correct number of lines
-# unnecessary lines get removed-- solution: allow user to remove this lines themselves
-# missing lines get added-- 
-'''
 
 c = 120
 # c is currently set, arbitrarily, to 120
@@ -321,9 +272,7 @@ root.bind('<Button>', click)
 
 
 # quit-out button
-quit_button = Button(root, text='Exit', command=root.quit)
-quit_button.pack()
-
+quit_button = Button(root, text='Exit', command=root.destroy).pack()
 # event loop
 root.mainloop()
 
@@ -337,6 +286,9 @@ shift_values[0] = 0
 shift_values.remove(shift_values[-1])
 print(shift_values)
 
+# FIXME-- raise error if incorrect number
+
+
 for val in shift_values:
 	shift(val)
 
@@ -344,16 +296,22 @@ for val in shift_values:
 FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
 cv2.imwrite(FINAL_IMAGE_PATH, original)
 
+
 # PLAN
 '''
 1. Have the original, unaltered image up [done]
 2. Have the guessed curve for the right half saved [done?]
 3. Draw a vertical line on image [done]
-4. Have user click on the vertical lines that intersect with the points of interest
-5. Plot based on the shift
+4. Have user click on the vertical lines that intersect with the points of interest [done]
+5. Plot based on the shift [done]
 
 ^^ repeat for left hand side
 ensure that it's the same number of both sides then link them
+
+AFTER:
+	-mark on image where user clicked
+	-option to hand-draw initial curve
+	-option to hand-mark right and left sides?
 '''
 
 
@@ -371,3 +329,118 @@ ensure that it's the same number of both sides then link them
 #cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_binary.jpg', binary)
 
 #cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img_thresh)
+
+
+
+
+
+
+
+########################################################################################
+# COPY starting from ~line 192
+original = cv2.imread(CUR_IMAGE_PATH) # start fresh, same process
+copy = cv2.addWeighted(original, 0.7, bgr_thresh, 0.3, 0)
+
+draw(bot, copy)
+
+## split up into smaller segments
+half = len(top)/2 + 60
+l = len(top)
+smooth_top = smoothen(top[half : half + l/8])
+draw(smooth_top, copy)
+
+smooth_top = smoothen(top[half + l/8 : half + l/4])
+draw(smooth_top, copy)
+
+smooth_top = smoothen(top[half + l/4 : half + l/2])
+draw(smooth_top, copy)
+
+half = len(top_lower)/2 + 60
+l = len(top_lower)
+smooth_toplower = smoothen(top_lower[half : half + l/8])
+draw(smooth_toplower, copy)
+
+smooth_toplower = smoothen(top_lower[half + l/8 : half + l/4])
+draw(smooth_toplower, copy)
+
+smooth_toplower = smoothen(top_lower[half + l/4 : half + l/2])
+draw(smooth_toplower, copy)
+
+#####################################################################################
+# shift curve approximations to best fits
+# averages top and bottom lines defining the retina
+med = []
+for c in range(cols):
+	green = []
+	for r in range(rows-1):
+		if list(copy[r, c]) != [0, 255, 0] and list(copy[r+1, c]) == [0, 255, 0]:
+			green.append((c, r))
+	if len(green) == 3:
+		avg = (green[0][1] + green[1][1])/2
+		copy[avg, c] = [0, 255, 0]
+		med.append((c, avg))
+
+NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
+cv2.imwrite(NEW_IMAGE_PATH, copy)
+exit()
+#####################################################################################
+# TOP OF RETINA
+# preserve x coordinate, shift y coordinate by a const value 
+# to align with top of retina
+# TODO just uses first coordinate for now
+approx = []
+const_shift = abs(top[0][1] - med[0][1]) 
+for p in med:
+	approx.append((p[0], p[1] - const_shift))
+draw(approx, original)
+
+# contains the shift values from the top of the retina
+shift_values = []
+
+c = 700
+# c is currently set, arbitrarily, to 120
+# draw a vertical line where shift occurs to mark it up
+for r in range(rows):
+	c_original[r, c] = [0, 255, 0]
+
+NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
+cv2.imwrite(NEW_IMAGE_PATH, c_original)
+
+### tkinter experimenting
+root = Tk()
+
+# image converter to show image using tkinter
+tk_img = ImageTk.PhotoImage(Image.open(NEW_IMAGE_PATH))
+img_label = Label(image=tk_img)
+img_label.pack()
+
+lbl = Label(root, text='')
+lbl.pack()
+
+root.bind('<Button>', click)
+
+
+# quit-out button
+quit_button = Button(root, text='Exit', command=root.destroy).pack()
+# event loop
+root.mainloop()
+
+
+# zeroing values and shifting
+for i in range(1, len(shift_values)):
+	shift_values[i] = abs(shift_values[i] - shift_values[0])
+shift_values[0] = 0
+
+# TEMP MANUALLY DELETE LAST?
+shift_values.remove(shift_values[-1])
+print(shift_values)
+
+# FIXME-- raise error if incorrect number
+
+
+for val in shift_values:
+	shift(val)
+
+# writing final image file
+FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
+cv2.imwrite(FINAL_IMAGE_PATH, original)

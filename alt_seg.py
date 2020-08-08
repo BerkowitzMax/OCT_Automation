@@ -372,10 +372,10 @@ for c in range(cols):
 # TOP OF RETINA
 # preserve x coordinate, shift y coordinate by a const value 
 # to align with top of retina
-# TODO just uses first coordinate for now
+# TODO just uses last coordinate for now
 top = top[len(top)/2 + 60 :]
 R_approx = []
-const_shift = abs(top[0][1] - med[0][1]) 
+const_shift = abs(top[-1][1] - med[-1][1]) 
 for p in med:
 	R_approx.append((p[0], p[1] - const_shift))
 draw(R_approx, original)
@@ -384,7 +384,7 @@ draw(R_approx, original)
 # contains the shift values from the top of the retina
 R_shift_values = []
 
-c = 850
+c = 950
 # c is currently set, arbitrarily, to 850
 # draw a vertical line where shift occurs to mark it up
 for r in range(rows):
@@ -464,23 +464,31 @@ def shift(idx):
 	# connect left and right side
 	p1 = (L_approx[-1][0], L_approx[-1][1] + L_shft)
 	p2 = (R_approx[0][0], R_approx[0][1] + R_shft)
-	cv2.line(original, (p1[0], p1[1]), (p2[0], p2[1]), color, 1)
+	cv2.line(original, p1, p2, color, 1)
 
 
 	# clean up edges
 	# (left)
 	edge = (0, R_approx[0][1] + L_shft)
 	p = (L_approx[0][0], R_approx[0][1] + L_shft)
-	cv2.line(original, (edge[0], edge[1]), (p[0], p[1]), color, 1)
+	cv2.line(original, edge, p, color, 1)
 
 	# (right)
 	edge = (cols, R_approx[-1][1] + R_shft)
 	p = (R_approx[-1][0], R_approx[-1][1] + R_shft)
-	cv2.line(original, (edge[0], edge[1]), (p[0], p[1]), color, 1)
+	cv2.line(original, edge, p, color, 1)
 
 
 for val in range(len(R_shift_values)):
 	shift(val)
+
+
+# TODO-- PLACE center vertical line (with correct colour) here
+# eventually create two lines 20+- 500 (halfway) so person can place line
+# within these bounds
+t = (500, 0)
+b = (500, rows)
+cv2.line(original, (t[0], t[1]), (b[0], b[1]), (243, 243, 243), 1)
 
 # writing final image file
 FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'

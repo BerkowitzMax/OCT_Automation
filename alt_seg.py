@@ -65,7 +65,7 @@ def draw(arr, d_img, color=(0, 255, 0)):
 	for i in range(len(arr)-1):
 		p1 = arr[i]
 		p2 = arr[i+1]
-		cv2.line(d_img, (p1[0], p1[1]), (p2[0], p2[1]), color, 1)
+		cv2.line(d_img, p1, p2, color, 1)
 
 # takes in 2 lists of x and y coordinates
 # fits data to 12th degree polynomial
@@ -447,6 +447,9 @@ def shift(idx):
 		color = (254, 254, 254)
 	elif idx == 5:
 		color = (255, 255, 255)
+	else:
+		print('Incorrect number of lines')
+		exit()
 
 	L_shft = L_shift_values[idx]
 	line = []
@@ -482,13 +485,12 @@ def shift(idx):
 for val in range(len(R_shift_values)):
 	shift(val)
 
-
 # TODO-- PLACE center vertical line (with correct colour) here
 # eventually create two lines 20+- 500 (halfway) so person can place line
 # within these bounds
 t = (500, 0)
 b = (500, rows)
-cv2.line(original, (t[0], t[1]), (b[0], b[1]), (243, 243, 243), 1)
+cv2.line(original, t, b, (243, 243, 243), 1)
 
 # writing final image file
 FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'

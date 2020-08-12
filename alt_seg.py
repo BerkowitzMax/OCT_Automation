@@ -132,7 +132,7 @@ top = reject_outliers(top, m=2)
 
 #####################################################################################
 
-# read in and save a jpeg
+# read in and save a tif
 grayscaled = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
 
 ## adaptive gaussian thresholdng
@@ -472,8 +472,8 @@ def shift(idx):
 
 	# clean up edges
 	# (left)
-	edge = (0, R_approx[0][1] + L_shft)
-	p = (L_approx[0][0], R_approx[0][1] + L_shft)
+	edge = (0, L_approx[0][1] + L_shft)
+	p = (L_approx[0][0], L_approx[0][1] + L_shft)
 	cv2.line(original, edge, p, color, 1)
 
 	# (right)
@@ -481,6 +481,14 @@ def shift(idx):
 	p = (R_approx[-1][0], R_approx[-1][1] + R_shft)
 	cv2.line(original, edge, p, color, 1)
 
+
+# sets max pxl value in image to 230
+grayscaled = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
+for r in range(rows):
+	for c in range(cols):
+		if grayscaled[r, c] > 230:
+			grayscaled[r, c] = 230
+original = cv2.cvtColor(grayscaled, cv2.COLOR_GRAY2BGR)
 
 for val in range(len(R_shift_values)):
 	shift(val)

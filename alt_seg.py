@@ -15,7 +15,7 @@ from PIL import ImageTk, Image
 import copy
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.jpg'
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.tif'
 original = cv2.imread(CUR_IMAGE_PATH)
 c_original = copy.deepcopy(original)
 
@@ -239,7 +239,7 @@ c = 120
 for r in range(rows):
 	c_original[r, c] = [0, 255, 0]
 
-NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
+NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.tif'
 cv2.imwrite(NEW_IMAGE_PATH, c_original)
 
 ### tkinter experimenting
@@ -282,7 +282,7 @@ print(L_shift_values)
 # FIXME-- raise error if incorrect number
 
 # writing final image file
-FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
+FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.tif'
 cv2.imwrite(FINAL_IMAGE_PATH, original)
 
 
@@ -308,16 +308,16 @@ AFTER:
 
 
 # alternative copies of image analysis in-progress
-#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
+#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.tif'
 #cv2.imwrite(NEW_IMAGE_PATH, copy)
 
-#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_markup.jpg'
+#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_markup.tif'
 #cv2.imwrite(NEW_IMAGE_PATH, markup)
 
 # shows top and bottom clearly but nothing else
-#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_binary.jpg', binary)
+#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_binary.tif', binary)
 
-#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.jpg', img_thresh)
+#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.tif', img_thresh)
 
 
 
@@ -390,7 +390,7 @@ c = 950
 for r in range(rows):
 	c_original[r, c] = [0, 255, 0]
 
-NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.jpg'
+NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.tif'
 cv2.imwrite(NEW_IMAGE_PATH, c_original)
 
 ### tkinter experimenting
@@ -493,5 +493,5 @@ b = (500, rows)
 cv2.line(original, t, b, (243, 243, 243), 1)
 
 # writing final image file
-FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.jpg'
+FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.tif'
 cv2.imwrite(FINAL_IMAGE_PATH, original)

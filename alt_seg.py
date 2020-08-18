@@ -15,9 +15,10 @@ from PIL import ImageTk, Image
 import copy
 import os
 
-CUR_IMAGE_PATH = '/home/maxberko/seg_automation/example_stack.tif'
+CUR_IMAGE_PATH = '/home/maxberko/seg_automation/Stack.jpg'
 original = cv2.imread(CUR_IMAGE_PATH)
 c_original = copy.deepcopy(original)
+smooth_final = copy.deepcopy(original)
 
 def collect_coordinates(row_start=0):
 	x_coord_arr = [] # array of x coordinate sets
@@ -56,11 +57,11 @@ def reject_outliers(data, m=1):
 
 	# remove middle
 	l = len(data)/2
-	data = data[:l-60] + data[l+60:]
+	data = data[:l-15] + data[l+15:]
 
 	return data
 
-# takes in a list of pairs (x, y)
+# takes in a list of pairs (x, y) => (c, r)
 def draw(arr, d_img, color=(0, 255, 0)):
 	for i in range(len(arr)-1):
 		p1 = arr[i]
@@ -285,46 +286,6 @@ print(L_shift_values)
 FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.tif'
 cv2.imwrite(FINAL_IMAGE_PATH, original)
 
-
-# PLAN
-'''
-1. Have the original, unaltered image up [done]
-2. Have the guessed curve for the right half saved [done?]
-3. Draw a vertical line on image [done]
-4. Have user click on the vertical lines that intersect with the points of interest [done]
-5. Plot based on the shift [done]
-
-^^ repeat for left hand side
-ensure that it's the same number of both sides then link them
-
-AFTER:
-	-mark on image where user clicked
-	-option to hand-draw initial curve
-	-option to hand-mark right and left sides?
-'''
-
-
-
-
-
-# alternative copies of image analysis in-progress
-#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_copy.tif'
-#cv2.imwrite(NEW_IMAGE_PATH, copy)
-
-#NEW_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_markup.tif'
-#cv2.imwrite(NEW_IMAGE_PATH, markup)
-
-# shows top and bottom clearly but nothing else
-#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_binary.tif', binary)
-
-#cv2.imwrite(CUR_IMAGE_PATH.split('.')[0] + '_despeck.tif', img_thresh)
-
-
-
-
-
-
-
 ########################################################################################
 # COPY starting from ~line 192
 original = cv2.imread(CUR_IMAGE_PATH) # start fresh, same process
@@ -457,7 +418,6 @@ def shift(idx):
 		line.append((p[0], p[1] + L_shft))
 	draw(line, original, color=color)
 
-
 	R_shft = R_shift_values[idx]
 	line = []
 	for p in R_approx:
@@ -502,4 +462,45 @@ cv2.line(original, t, b, (243, 243, 243), 1)
 
 # writing final image file
 FINAL_IMAGE_PATH = CUR_IMAGE_PATH.split('.')[0] + '_modified.tif'
+cv2.imwrite(FINAL_IMAGE_PATH, original)
+
+exit()
+## TODO ##
+'''
+Uses 'smooth_final' to check unaltered image colour values
+
+for each column, check +-10 pxls above or below current line of interest, then shift towards brightest pixel
+'''
+# markup 'smooth_final' copy, but use 'original'
+
+line_colors = [249, 250, 252, 253, 254, 255]
+
+
+# (x,y) => (c, r)
+# shift pixel up or down slightly
+# bound: +-10
+def adjust_placement(coord):
+	r = coord[0]
+	c = coord[1]
+
+	max_val = sum(smooth_final[r, c])/3
+	max_coord = (r, c)
+
+	# 10 pxls up and down
+	for y in range(1, 11):
+		if sum(smooth_final[r-y, c])/3 > max_val:
+			max_val = sum(smooth_final[r-y, c])/3
+			max_coord = (r-y, c)
+
+		if sum(smooth_final[r+y, c])/3 > max_val:
+			max_val = sum(smooth_final[r+y, c])/3
+			max_coord = (r+y, c)
+
+	original[max_coord[0], max_coord[1]] = [0, 255, 0]
+
+for c in range(cols):
+	for r in range(rows):
+		if list(original[r, c]) == [254, 254, 254]:
+			adjust_placement((r, c))
+			
 cv2.imwrite(FINAL_IMAGE_PATH, original)
